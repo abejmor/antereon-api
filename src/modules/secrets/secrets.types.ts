@@ -20,20 +20,8 @@ export interface ServerConfig {
   corsOrigin: string | string[];
 }
 
-export interface ProviderConfig {
-  baseUrl: string;
-  timeout: number;
-}
-
-export interface ProvidersConfig {
-  virustotal: ProviderConfig;
-  abuseipdb: ProviderConfig;
-  alienvault: ProviderConfig;
-}
-
 export interface Config {
   database: DatabaseConfig;
   security: SecurityConfig;
   server: ServerConfig;
-  providers: ProvidersConfig;
 }

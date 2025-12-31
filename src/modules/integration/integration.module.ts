@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { Integration } from './domain/integration.entity';
-import { EncryptionService } from './domain/encryption.service';
-import { IntegrationService } from './domain/integration.service';
+import { EncryptionService } from './domain/services/encryption.service';
+import { IntegrationService } from './domain/services/integration.service';
 import { IntegrationController } from './infrastructure/integration.controller';
 
 @Module({

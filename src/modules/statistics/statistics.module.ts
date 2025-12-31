@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StatisticsController } from './statistics.controller';
-import { StatisticsService } from './statistics.service';
+import { StatisticsService } from './domain/services/statistics.service';
 import { Integration } from '../integration/domain/integration.entity';
 import { IOCAnalysisResult } from '../ioc-analysis/domain/ioc-analysis-result.entity';
 

@@ -1,80 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { IntegrationService } from '@/modules/integration/domain/integration.service';
+import { IntegrationService } from '@/modules/integration/domain/services/integration.service';
 import { AbuseIPDBResponse } from '@/modules/abuseipdb/infrastructure/abuseipdb.dto';
-import { StatisticsService } from '@/modules/statistics/statistics.service';
-import axios from 'axios';
+import { StatisticsService } from '@/modules/statistics/domain/services/statistics.service';
+import { BaseProviderService } from '@/modules/shared/base-provider.service';
 
 @Injectable()
-export class AbuseipdbService {
-  private readonly baseUrl = 'https://api.abuseipdb.com/api/v2';
+export class AbuseipdbService extends BaseProviderService {
+  protected readonly baseUrl = 'https://api.abuseipdb.com/api/v2';
+  protected readonly providerName = 'abuseipdb';
 
   constructor(
-    private readonly integrationService: IntegrationService,
-    private readonly statisticsService: StatisticsService,
-  ) {}
-
-  private async getApiKey(
-    integrationId: string,
-    userId: string,
-  ): Promise<string> {
-    try {
-      const integration = await this.integrationService.findById(
-        integrationId,
-        userId,
-      );
-
-      if (!integration || !integration.isActive) {
-        throw new Error(
-          'abuseipdb integration not found or not active for this user',
-        );
-      }
-
-      const apiKey = await this.integrationService.getDecryptedApiKey(
-        integrationId,
-        userId,
-      );
-
-      return apiKey;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`failed to get abuseipdb API key: ${errorMessage}`);
-    }
+    integrationService: IntegrationService,
+    statisticsService: StatisticsService,
+  ) {
+    super(integrationService, statisticsService);
   }
 
-  private async makeRequest(
-    endpoint: string,
-    integrationId: string,
-    userId: string,
-    params?: Record<string, string>,
-  ): Promise<AbuseIPDBResponse> {
-    const apiKey = await this.getApiKey(integrationId, userId);
-    const url = `${this.baseUrl}/${endpoint}`;
-
-    const config = {
-      params,
-      headers: {
-        Key: apiKey,
-        Accept: 'application/json',
-      },
+  protected buildHeaders(apiKey: string): Record<string, string> {
+    return {
+      Key: apiKey,
+      Accept: 'application/json',
     };
-
-    try {
-      const response = await axios.get(url, config);
-
-      await this.statisticsService.incrementUsageCount(userId, 'abuseipdb');
-
-      return {
-        provider: 'abuseipdb',
-        status: 'success' as const,
-        apiData: response.data as Record<string, unknown>,
-        analysisTimestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`AbuseIPDB API error: ${errorMessage}`);
-    }
   }
 
   async checkIp(
@@ -82,13 +28,15 @@ export class AbuseipdbService {
     integrationId: string,
     userId: string,
   ): Promise<AbuseIPDBResponse> {
-    const params = {
-      ipAddress: ip,
-      maxAgeInDays: '90',
-      verbose: 'true',
-    };
-
-    return this.makeRequest('check', integrationId, userId, params);
+    const url = `${this.baseUrl}/check`;
+    return this.makeRequest<AbuseIPDBResponse>(url, integrationId, userId, {
+      method: 'GET',
+      params: {
+        ipAddress: ip,
+        maxAgeInDays: '90',
+        verbose: 'true',
+      },
+    });
   }
 
   async reportIp(
@@ -98,36 +46,17 @@ export class AbuseipdbService {
     integrationId: string,
     userId: string,
   ): Promise<AbuseIPDBResponse> {
-    const apiKey = await this.getApiKey(integrationId, userId);
     const url = `${this.baseUrl}/report`;
-
-    const data = {
-      ip,
-      categories: categories.join(','),
-      comment,
-    };
-
-    const config = {
+    return this.makeRequest<AbuseIPDBResponse>(url, integrationId, userId, {
+      method: 'POST',
+      data: {
+        ip,
+        categories: categories.join(','),
+        comment,
+      },
       headers: {
-        Key: apiKey,
-        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-    };
-
-    try {
-      const response = await axios.post(url, data, config);
-
-      return {
-        provider: 'abuseipdb',
-        status: 'success' as const,
-        apiData: response.data as Record<string, unknown>,
-        analysisTimestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`AbuseIPDB API error: ${errorMessage}`);
-    }
+    });
   }
 }

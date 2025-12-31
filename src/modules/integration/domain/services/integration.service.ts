@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, ILike, FindManyOptions } from 'typeorm';
-import { Integration } from './integration.entity';
+import { Integration } from '../integration.entity';
 import { EncryptionService } from './encryption.service';
 import {
   CreateIntegrationDto,
   UpdateIntegrationDto,
   IntegrationResponseDto,
   ListIntegrationsInputDto,
-} from '../infrastructure/integration.dto';
+} from '../../infrastructure/integration.dto';
 import { plainToClass } from 'class-transformer';
 
 @Injectable()
@@ -55,8 +55,8 @@ export class IntegrationService {
       where.provider = In(provider);
     }
 
-    if (isActive?.length === 1) {
-      where.isActive = isActive[0] === 'active' || isActive[0] === 'true';
+    if (isActive !== undefined) {
+      where.isActive = isActive;
     }
 
     const findOptions: FindManyOptions<Integration> = {
@@ -77,10 +77,11 @@ export class IntegrationService {
     return integrations.map((i) => this.toResponseDto(i));
   }
 
-  async findActiveByUser(userId: string): Promise<Integration[]> {
-    return this.integrationRepository.find({
+  async findActiveByUser(userId: string): Promise<IntegrationResponseDto[]> {
+    const integrations = await this.integrationRepository.find({
       where: { userId, isActive: true },
     });
+    return integrations.map((i) => this.toResponseDto(i));
   }
 
   async findById(id: string, userId: string): Promise<IntegrationResponseDto> {
@@ -99,11 +100,21 @@ export class IntegrationService {
       await this.unsetOtherDefaults(userId, integration.provider, id);
     }
 
-    if (
-      dto.apiKey &&
-      dto.apiKey !== this.tryDecrypt(integration.encryptedApiKey)
-    ) {
-      integration.encryptedApiKey = this.encryptionService.encrypt(dto.apiKey);
+    if (dto.apiKey) {
+      try {
+        const currentKey = this.encryptionService.decrypt(
+          integration.encryptedApiKey,
+        );
+        if (dto.apiKey !== currentKey) {
+          integration.encryptedApiKey = this.encryptionService.encrypt(
+            dto.apiKey,
+          );
+        }
+      } catch {
+        integration.encryptedApiKey = this.encryptionService.encrypt(
+          dto.apiKey,
+        );
+      }
     }
 
     const { apiKey: _apiKey, ...updateData } = dto;
@@ -122,14 +133,6 @@ export class IntegrationService {
       { userId, provider, ...(excludeId && { id: Not(excludeId) }) },
       { isDefault: false },
     );
-  }
-
-  private tryDecrypt(encrypted: string): string | null {
-    try {
-      return this.encryptionService.decrypt(encrypted);
-    } catch {
-      return null;
-    }
   }
 
   async delete(id: string, userId: string): Promise<void> {

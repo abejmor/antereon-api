@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { testsAppModule } from '../../../test.app.module';
 import request from 'supertest';
-import { UserService } from '../../../../src/modules/user/domain/user.service';
+import { UserService } from '../../../../src/modules/user/domain/services/user.service';
 import { JwtService } from '@nestjs/jwt';
 
 describe('PUT /auth/profile', () => {

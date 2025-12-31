@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { testsAppModule } from '../../../test.app.module';
 import request from 'supertest';
 import { AuthResponseDto } from '../../../../src/modules/auth/infrastructure/auth.dto';
-import { UserService } from '../../../../src/modules/user/domain/user.service';
+import { UserService } from '../../../../src/modules/user/domain/services/user.service';
 
 describe('POST /auth/login', () => {
   let app: INestApplication;

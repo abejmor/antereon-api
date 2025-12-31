@@ -4,8 +4,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { UserRepository } from './user.repository';
-import { User } from './user.entity';
+import { UserRepository } from '../user.repository';
+import { User } from '../user.entity';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()

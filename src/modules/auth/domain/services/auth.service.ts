@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '@/modules/user/domain/user.service';
+import { UserService } from '@/modules/user/domain/services/user.service';
 import { User } from '@/modules/user/domain/user.entity';
 import {
   RegisterDto,
@@ -24,13 +24,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const user = await this.userService.createUser(
-      registerDto.name,
-      registerDto.email,
-      registerDto.password,
-    );
-
+  private generateAuthResponse(user: User): AuthResponseDto {
     const payload = { sub: user.id, email: user.email };
     const accessToken = this.jwtService.sign(payload);
 
@@ -38,6 +32,16 @@ export class AuthService {
       user: plainToClass(UserResponseDto, user),
       accessToken,
     };
+  }
+
+  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+    const user = await this.userService.createUser(
+      registerDto.name,
+      registerDto.email,
+      registerDto.password,
+    );
+
+    return this.generateAuthResponse(user);
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -54,13 +58,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email };
-    const accessToken = this.jwtService.sign(payload);
-
-    return {
-      user: plainToClass(UserResponseDto, user),
-      accessToken,
-    };
+    return this.generateAuthResponse(user);
   }
 
   async getProfile(userId: string): Promise<UserResponseDto> {

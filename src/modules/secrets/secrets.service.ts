@@ -16,20 +16,11 @@ export class SecretsService {
     return this.configService.get<string>('NODE_ENV', 'development');
   }
 
-  public get<T = any>(key: string, defaultValue?: T): T {
-    return this.configService.get<T>(key, defaultValue as T);
-  }
-
-  public has(key: string): boolean {
-    return this.configService.get(key) !== undefined;
-  }
-
   getAppConfig(): Config {
     return {
       database: this.getDatabaseConfig(),
       security: this.getSecurityConfig(),
       server: this.getServerConfig(),
-      providers: this.getProvidersConfig(),
     };
   }
 
@@ -67,23 +58,6 @@ export class SecretsService {
         }
         return ['http://localhost:5173'];
       })(),
-    };
-  }
-
-  private getProvidersConfig() {
-    return {
-      virustotal: {
-        baseUrl: 'https://www.virustotal.com/vtapi/v2',
-        timeout: 10000,
-      },
-      abuseipdb: {
-        baseUrl: 'https://api.abuseipdb.com/api/v2',
-        timeout: 10000,
-      },
-      alienvault: {
-        baseUrl: 'https://otx.alienvault.com/api/v1',
-        timeout: 10000,
-      },
     };
   }
 }

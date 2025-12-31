@@ -83,18 +83,16 @@ export class ListIntegrationsInputDto {
 
   @ApiPropertyOptional({
     description: 'filter by active status',
-    type: [String],
+    type: Boolean,
   })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
   @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return [value];
-    }
-    return Array.isArray(value) ? (value as string[]) : [];
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return undefined;
   })
-  isActive?: string[];
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({
     description: 'filter by provider',

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwtAuth.guard';
 import { Public } from '@/modules/auth/decorators/public.decorator';
-import { StatisticsService } from './statistics.service';
+import { StatisticsService } from './domain/services/statistics.service';
 
 @ApiTags('statistics')
 @ApiBearerAuth()
@@ -15,16 +15,6 @@ import { StatisticsService } from './statistics.service';
 @UseGuards(JwtAuthGuard)
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
-
-  @Get('home')
-  @ApiOperation({ summary: 'Get home statistics for current user' })
-  @ApiResponse({
-    status: 200,
-    description: 'Home statistics retrieved successfully',
-  })
-  async getHomeStats(@Req() req: { user: { id: string } }) {
-    return this.statisticsService.getHomeStats(req.user.id);
-  }
 
   @Get('summary')
   @ApiOperation({ summary: 'Get usage statistics summary for current user' })

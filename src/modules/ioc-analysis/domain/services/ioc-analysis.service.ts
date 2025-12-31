@@ -117,7 +117,9 @@ export class IOCAnalysisService {
       where: { id, userId },
     });
     if (!result) {
-      throw new NotFoundException(`IOC analysis result with ID ${id} not found`);
+      throw new NotFoundException(
+        `IOC analysis result with ID ${id} not found`,
+      );
     }
     return result;
   }
@@ -128,28 +130,47 @@ export class IOCAnalysisService {
     analysesByType: Record<string, number>;
     recentAnalyses: IOCAnalysisResultResponseDto[];
   }> {
-    const allUserAnalyses = await this.iocAnalysisRepository.find({
+    const totalAnalyses = await this.iocAnalysisRepository.count({
       where: { userId },
-      order: { createdAt: 'DESC' },
     });
 
-    const analysesByProvider: Record<string, number> = {};
-    const analysesByType: Record<string, number> = {};
+    const providerStats = await this.iocAnalysisRepository
+      .createQueryBuilder('analysis')
+      .select('analysis.provider', 'provider')
+      .addSelect('COUNT(*)', 'count')
+      .where('analysis.userId = :userId', { userId })
+      .groupBy('analysis.provider')
+      .getRawMany();
 
-    for (const result of allUserAnalyses) {
-      analysesByProvider[result.provider] = (analysesByProvider[result.provider] || 0) + 1;
-      analysesByType[result.iocType] = (analysesByType[result.iocType] || 0) + 1;
-    }
+    const typeStats = await this.iocAnalysisRepository
+      .createQueryBuilder('analysis')
+      .select('analysis.iocType', 'iocType')
+      .addSelect('COUNT(*)', 'count')
+      .where('analysis.userId = :userId', { userId })
+      .groupBy('analysis.iocType')
+      .getRawMany();
 
-    const recentAnalyses = allUserAnalyses
-      .slice(0, 10)
-      .map((result) => this.toResponseDto(result));
+    const recentResults = await this.iocAnalysisRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
 
     return {
-      totalAnalyses: allUserAnalyses.length,
-      analysesByProvider,
-      analysesByType,
-      recentAnalyses,
+      totalAnalyses,
+      analysesByProvider: Object.fromEntries(
+        providerStats.map((s: { provider: string; count: string }) => [
+          s.provider,
+          parseInt(s.count),
+        ]),
+      ),
+      analysesByType: Object.fromEntries(
+        typeStats.map((s: { iocType: string; count: string }) => [
+          s.iocType,
+          parseInt(s.count),
+        ]),
+      ),
+      recentAnalyses: recentResults.map((r) => this.toResponseDto(r)),
     };
   }
 
