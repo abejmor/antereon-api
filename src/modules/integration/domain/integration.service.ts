@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not } from 'typeorm';
+import { Repository, In, Not, ILike, FindManyOptions } from 'typeorm';
 import { Integration } from './integration.entity';
 import { EncryptionService } from './encryption.service';
 import {
@@ -23,74 +23,58 @@ export class IntegrationService {
     userId: string,
     createIntegrationDto: CreateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
-    const { provider, name, apiKey, isDefault, configuration } =
-      createIntegrationDto;
+    const { provider, apiKey, isDefault } = createIntegrationDto;
 
     if (isDefault) {
-      await this.integrationRepository.update(
-        { userId, provider },
-        { isDefault: false },
-      );
+      await this.unsetOtherDefaults(userId, provider);
     }
 
     const encryptedApiKey = this.encryptionService.encrypt(apiKey);
 
-    const integration = this.integrationRepository.create({
-      provider,
-      name,
-      encryptedApiKey,
-      isDefault: isDefault || false,
-      configuration,
+    const newIntegration = this.integrationRepository.create({
+      ...createIntegrationDto,
       userId,
+      encryptedApiKey,
+      isDefault: !!isDefault,
     });
 
-    const savedIntegration = await this.integrationRepository.save(integration);
-
+    const savedIntegration =
+      await this.integrationRepository.save(newIntegration);
     return this.toResponseDto(savedIntegration);
   }
 
   async findAllByUser(
     userId: string,
-    filters?: ListIntegrationsInputDto,
+    filters: ListIntegrationsInputDto = {},
   ): Promise<IntegrationResponseDto[]> {
-    const whereConditions: Record<string, any> = { userId };
+    const { provider, isActive, search } = filters;
 
-    if (filters) {
-      if (filters.isActive && filters.isActive.length > 0) {
-        const activeValues = filters.isActive.map((val) => {
-          if (val === 'active') return true;
-          if (val === 'inactive') return false;
-          return val === 'true';
-        });
-        if (activeValues.length === 1) {
-          whereConditions.isActive = activeValues[0];
-        }
-      }
+    const where: FindManyOptions<Integration>['where'] = { userId };
 
-      if (filters.provider && filters.provider.length > 0) {
-        whereConditions.provider = In(filters.provider);
-      }
+    if (provider?.length) {
+      where.provider = In(provider);
     }
 
-    const integrations = await this.integrationRepository.find({
-      where: whereConditions,
+    if (isActive?.length === 1) {
+      where.isActive = isActive[0] === 'active' || isActive[0] === 'true';
+    }
+
+    const findOptions: FindManyOptions<Integration> = {
+      where,
       order: { createdAt: 'DESC' },
-    });
+    };
 
-    let filteredIntegrations = integrations;
-
-    if (filters?.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filteredIntegrations = integrations.filter(
-        (integration) =>
-          integration.name.toLowerCase().includes(searchTerm) ||
-          integration.provider.toLowerCase().includes(searchTerm),
-      );
+    if (search) {
+      const term = ILike(`%${search.toLowerCase()}%`);
+      findOptions.where = [
+        { ...where, name: term },
+        { ...where, provider: term },
+      ];
     }
 
-    return filteredIntegrations.map((integration) =>
-      this.toResponseDto(integration),
-    );
+    const integrations = await this.integrationRepository.find(findOptions);
+
+    return integrations.map((i) => this.toResponseDto(i));
   }
 
   async findActiveByUser(userId: string): Promise<Integration[]> {
@@ -99,120 +83,62 @@ export class IntegrationService {
     });
   }
 
-  async findByProviderAndUser(
-    provider: string,
-    userId: string,
-  ): Promise<Integration | null> {
-    const integration = await this.integrationRepository.findOne({
-      where: { provider, userId, isActive: true, isDefault: true },
-    });
-
-    if (!integration) {
-      const fallbackIntegration = await this.integrationRepository.findOne({
-        where: { provider, userId, isActive: true },
-      });
-
-      if (!fallbackIntegration) {
-        return null;
-      }
-
-      const decryptedApiKey = this.encryptionService.decrypt(
-        fallbackIntegration.encryptedApiKey,
-      );
-
-      return {
-        ...fallbackIntegration,
-        apiKey: decryptedApiKey,
-      } as Integration & { apiKey: string };
-    }
-
-    const decryptedApiKey = this.encryptionService.decrypt(
-      integration.encryptedApiKey,
-    );
-
-    return {
-      ...integration,
-      apiKey: decryptedApiKey,
-    } as Integration & { apiKey: string };
-  }
-
   async findById(id: string, userId: string): Promise<IntegrationResponseDto> {
-    const integration = await this.integrationRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('integration not found');
-    }
-
+    const integration = await this.getIntegrationOrFail(id, userId);
     return this.toResponseDto(integration);
   }
 
   async update(
     id: string,
     userId: string,
-    updateIntegrationDto: UpdateIntegrationDto,
+    dto: UpdateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
-    const integration = await this.integrationRepository.findOne({
-      where: { id, userId },
-    });
+    const integration = await this.getIntegrationOrFail(id, userId);
 
-    if (!integration) {
-      throw new NotFoundException('integration not found');
-    }
-    if (updateIntegrationDto.isDefault) {
-      await this.integrationRepository.update(
-        { userId, provider: integration.provider, id: Not(id) },
-        { isDefault: false },
-      );
+    if (dto.isDefault) {
+      await this.unsetOtherDefaults(userId, integration.provider, id);
     }
 
-    if (updateIntegrationDto.apiKey) {
-      const currentApiKey = integration.encryptedApiKey
-        ? this.encryptionService.decrypt(integration.encryptedApiKey)
-        : null;
-
-      if (currentApiKey !== updateIntegrationDto.apiKey) {
-        integration.encryptedApiKey = this.encryptionService.encrypt(
-          updateIntegrationDto.apiKey,
-        );
-      }
+    if (
+      dto.apiKey &&
+      dto.apiKey !== this.tryDecrypt(integration.encryptedApiKey)
+    ) {
+      integration.encryptedApiKey = this.encryptionService.encrypt(dto.apiKey);
     }
 
-    Object.assign(integration, {
-      name: updateIntegrationDto.name,
-      isActive: updateIntegrationDto.isActive,
-      isDefault: updateIntegrationDto.isDefault,
-      configuration: updateIntegrationDto.configuration,
-    });
+    const { apiKey: _apiKey, ...updateData } = dto;
+    Object.assign(integration, updateData);
 
-    const updatedIntegration =
-      await this.integrationRepository.save(integration);
+    const updated = await this.integrationRepository.save(integration);
+    return this.toResponseDto(updated);
+  }
 
-    return this.toResponseDto(updatedIntegration);
+  private async unsetOtherDefaults(
+    userId: string,
+    provider: string,
+    excludeId?: string,
+  ) {
+    await this.integrationRepository.update(
+      { userId, provider, ...(excludeId && { id: Not(excludeId) }) },
+      { isDefault: false },
+    );
+  }
+
+  private tryDecrypt(encrypted: string): string | null {
+    try {
+      return this.encryptionService.decrypt(encrypted);
+    } catch {
+      return null;
+    }
   }
 
   async delete(id: string, userId: string): Promise<void> {
-    const integration = await this.integrationRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('integration not found');
-    }
-
+    const integration = await this.getIntegrationOrFail(id, userId);
     await this.integrationRepository.remove(integration);
   }
 
   async getDecryptedApiKey(id: string, userId: string): Promise<string> {
-    const integration = await this.integrationRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('Integration not found');
-    }
-
+    const integration = await this.getIntegrationOrFail(id, userId);
     return this.encryptionService.decrypt(integration.encryptedApiKey);
   }
 
@@ -220,13 +146,7 @@ export class IntegrationService {
     id: string,
     userId: string,
   ): Promise<{ apiKey: string; integrationId: string; provider: string }> {
-    const integration = await this.integrationRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('Integration not found');
-    }
+    const integration = await this.getIntegrationOrFail(id, userId);
 
     const decryptedApiKey = this.encryptionService.decrypt(
       integration.encryptedApiKey,
@@ -243,19 +163,26 @@ export class IntegrationService {
     id: string,
     userId: string,
   ): Promise<IntegrationResponseDto> {
-    const integration = await this.integrationRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('integration not found');
-    }
+    const integration = await this.getIntegrationOrFail(id, userId);
 
     integration.isActive = !integration.isActive;
     const updatedIntegration =
       await this.integrationRepository.save(integration);
 
     return this.toResponseDto(updatedIntegration);
+  }
+
+  private async getIntegrationOrFail(
+    id: string,
+    userId: string,
+  ): Promise<Integration> {
+    const integration = await this.integrationRepository.findOne({
+      where: { id, userId },
+    });
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+    return integration;
   }
 
   private toResponseDto(integration: Integration): IntegrationResponseDto {

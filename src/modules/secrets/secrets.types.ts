@@ -17,7 +17,7 @@ export interface SecurityConfig {
 
 export interface ServerConfig {
   port: string | number;
-  corsOrigin: string;
+  corsOrigin: string | string[];
 }
 
 export interface ProviderConfig {

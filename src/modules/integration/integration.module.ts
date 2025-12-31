@@ -5,11 +5,10 @@ import { Integration } from './domain/integration.entity';
 import { EncryptionService } from './domain/encryption.service';
 import { IntegrationService } from './domain/integration.service';
 import { IntegrationController } from './infrastructure/integration.controller';
-import { IntegrationStatusController } from './infrastructure/integration-status.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Integration]), ConfigModule],
-  controllers: [IntegrationController, IntegrationStatusController],
+  controllers: [IntegrationController],
   providers: [EncryptionService, IntegrationService],
   exports: [EncryptionService, IntegrationService, TypeOrmModule],
 })

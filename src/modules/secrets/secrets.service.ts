@@ -1,14 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { mainConfig, ConfigKey } from './secrets/config';
-import { developmentConfig } from './secrets/development';
-import { testConfig } from './secrets/test';
-import { productionConfig } from './secrets/production';
 import { Config } from './secrets.types';
-import * as dotenv from 'dotenv';
-
-dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
-dotenv.config({ path: '.env.local' });
 
 @Injectable()
 export class SecretsService {
@@ -20,55 +12,8 @@ export class SecretsService {
     );
   }
 
-  public getConfigSecrets<T extends ConfigKey>(name: T): Config[T] {
-    const env = this.getRuntimeEnv();
-
-    if (env === 'production') {
-      return this.getEnvironmentConfig(name, productionConfig);
-    }
-
-    const envConfig = this.getEnvConfig();
-    return this.getEnvironmentConfig(name, envConfig);
-  }
-
-  public getAllConfig(): Config {
-    const envConfig = this.getEnvConfig();
-
-    return {
-      database: { ...mainConfig.database, ...envConfig.database },
-      security: { ...mainConfig.security, ...envConfig.security },
-      server: { ...mainConfig.server, ...envConfig.server },
-      providers: { ...mainConfig.providers, ...envConfig.providers },
-    } as Config;
-  }
-
-  private getEnvironmentConfig<T extends ConfigKey>(
-    name: T,
-    envConfig: Partial<Config>,
-  ): Config[T] {
-    return { ...mainConfig[name], ...envConfig[name] } as Config[T];
-  }
-
-  private getEnvConfig(): Partial<Config> {
-    const env = this.getRuntimeEnv();
-
-    switch (env) {
-      case 'development':
-        return developmentConfig;
-      case 'test':
-        return testConfig;
-      case 'production':
-        return productionConfig;
-      default:
-        this.logger.warn(
-          `Unknown environment: ${env}, using development config`,
-        );
-        return developmentConfig;
-    }
-  }
-
   public getRuntimeEnv(): string {
-    return process.env.NODE_ENV || 'development';
+    return this.configService.get<string>('NODE_ENV', 'development');
   }
 
   public get<T = any>(key: string, defaultValue?: T): T {
@@ -115,10 +60,13 @@ export class SecretsService {
   private getServerConfig() {
     return {
       port: this.configService.get<number>('PORT', 3000),
-      corsOrigin: this.configService.get<string>(
-        'CORS_ORIGIN',
-        'http://localhost:5173',
-      ),
+      corsOrigin: (() => {
+        const origin = this.configService.get<string>('CORS_ORIGIN');
+        if (origin) {
+          return origin.split(',');
+        }
+        return ['http://localhost:5173'];
+      })(),
     };
   }
 
