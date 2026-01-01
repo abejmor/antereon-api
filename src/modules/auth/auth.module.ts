@@ -18,7 +18,7 @@ import { SecretsService } from '../secrets/secrets.service';
     JwtModule.registerAsync({
       imports: [SecretsModule],
       useFactory: (secretsService: SecretsService) => {
-        const securityConfig = secretsService.getConfigSecrets('security');
+        const securityConfig = secretsService.getAppConfig().security;
         return {
           secret: securityConfig.jwtSecret,
           signOptions: {

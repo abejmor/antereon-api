@@ -17,23 +17,11 @@ export interface SecurityConfig {
 
 export interface ServerConfig {
   port: string | number;
-  corsOrigin: string;
-}
-
-export interface ProviderConfig {
-  baseUrl: string;
-  timeout: number;
-}
-
-export interface ProvidersConfig {
-  virustotal: ProviderConfig;
-  abuseipdb: ProviderConfig;
-  alienvault: ProviderConfig;
+  corsOrigin: string | string[];
 }
 
 export interface Config {
   database: DatabaseConfig;
   security: SecurityConfig;
   server: ServerConfig;
-  providers: ProvidersConfig;
 }

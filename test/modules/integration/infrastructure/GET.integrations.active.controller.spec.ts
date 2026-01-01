@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { testsAppModule } from '../../../test.app.module';
 import request from 'supertest';
-import { UserService } from '../../../../src/modules/user/domain/user.service';
-import { IntegrationService } from '../../../../src/modules/integration/domain/integration.service';
+import { UserService } from '../../../../src/modules/user/domain/services/user.service';
+import { IntegrationService } from '../../../../src/modules/integration/domain/services/integration.service';
 import { JwtService } from '@nestjs/jwt';
 
 describe('GET /integrations/active', () => {

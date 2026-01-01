@@ -11,7 +11,7 @@ export class TestDatabaseModule {
     return TypeOrmModule.forRootAsync({
       imports: [SecretsModule],
       useFactory: (secretsService: SecretsService) => {
-        const dbConfig = secretsService.getConfigSecrets('database');
+        const dbConfig = secretsService.getAppConfig().database;
 
         return {
           type: 'postgres',
@@ -21,9 +21,9 @@ export class TestDatabaseModule {
           password: dbConfig.password,
           database: dbConfig.name,
           entities: [__dirname + '/../src/**/*.entity{.ts,.js}'],
-          synchronize: dbConfig.synchronize,
-          logging: dbConfig.logging,
-          dropSchema: dbConfig.dropSchema,
+          synchronize: true,
+          logging: false,
+          dropSchema: true,
           autoLoadEntities: true,
         };
       },

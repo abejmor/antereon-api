@@ -11,7 +11,7 @@ import {
   HttpStatus,
   Query,
 } from '@nestjs/common';
-import { IntegrationService } from '../domain/integration.service';
+import { IntegrationService } from '../domain/services/integration.service';
 import {
   CreateIntegrationDto,
   UpdateIntegrationDto,
@@ -71,12 +71,7 @@ export class IntegrationController {
   async findActive(
     @Request() req: { user: { id: string } },
   ): Promise<IntegrationResponseDto[]> {
-    const activeIntegrations = await this.integrationService.findActiveByUser(
-      req.user.id,
-    );
-    return activeIntegrations.map((integration) =>
-      this.integrationService['toResponseDto'](integration),
-    );
+    return this.integrationService.findActiveByUser(req.user.id);
   }
 
   @Get(':id')

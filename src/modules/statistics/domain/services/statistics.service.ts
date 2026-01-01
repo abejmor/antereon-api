@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Integration } from '../integration/domain/integration.entity';
-import { IOCAnalysisResult } from '../ioc-analysis/domain/ioc-analysis-result.entity';
+import { Integration } from '@/modules/integration/domain/integration.entity';
+import { IOCAnalysisResult } from '@/modules/ioc-analysis/domain/ioc-analysis-result.entity';
 
 @Injectable()
 export class StatisticsService {

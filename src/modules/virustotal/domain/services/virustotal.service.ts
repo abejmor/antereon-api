@@ -1,105 +1,70 @@
 import { Injectable } from '@nestjs/common';
-import { IntegrationService } from '@/modules/integration/domain/integration.service';
-import { Integration } from '@/modules/integration/domain/integration.entity';
+import { IntegrationService } from '@/modules/integration/domain/services/integration.service';
 import { VirusTotalResponse } from '@/modules/virustotal/infrastructure/virustotal.dto';
-import { StatisticsService } from '@/modules/statistics/statistics.service';
-import axios from 'axios';
+import { StatisticsService } from '@/modules/statistics/domain/services/statistics.service';
+import { BaseProviderService } from '@/modules/shared/base-provider.service';
 
 @Injectable()
-export class VirustotalService {
-  private readonly baseUrl = 'https://www.virustotal.com/api/v3';
+export class VirustotalService extends BaseProviderService {
+  protected readonly baseUrl = 'https://www.virustotal.com/api/v3';
+  protected readonly providerName = 'virustotal';
 
   constructor(
-    private readonly integrationService: IntegrationService,
-    private readonly statisticsService: StatisticsService,
-  ) {}
-
-  private async getApiKey(
-    userId: string,
-    integrationId: string,
-  ): Promise<string> {
-    try {
-      return await this.integrationService.getDecryptedApiKey(
-        integrationId,
-        userId,
-      );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`failed to get virustotal API key: ${errorMessage}`);
-    }
+    integrationService: IntegrationService,
+    statisticsService: StatisticsService,
+  ) {
+    super(integrationService, statisticsService);
   }
 
-  private async makeRequest(
-    url: string,
-    userId: string,
-    integrationId: string,
-    options?: {
-      method?: 'GET' | 'POST';
-      data?: unknown;
-      headers?: Record<string, string>;
-    },
-  ): Promise<VirusTotalResponse> {
-    const apiKey = await this.getApiKey(userId, integrationId);
-    const config = {
-      headers: {
-        'x-apikey': apiKey,
-        ...options?.headers,
-      },
-    };
-
-    const response =
-      options?.method === 'POST'
-        ? await axios.post(url, options.data, config)
-        : await axios.get(url, config);
-
-    await this.statisticsService.incrementUsageCount(userId, 'virustotal');
-
+  protected buildHeaders(apiKey: string): Record<string, string> {
     return {
-      provider: 'virustotal',
-      status: 'success' as const,
-      apiData: response.data as Record<string, unknown>,
-      analysisTimestamp: new Date().toISOString(),
+      'x-apikey': apiKey,
     };
   }
 
   async checkIp(
     ip: string,
-    userId: string,
     integrationId: string,
+    userId: string,
   ): Promise<VirusTotalResponse> {
     const url = `${this.baseUrl}/ip_addresses/${ip}`;
-    return this.makeRequest(url, userId, integrationId);
+    return this.makeRequest<VirusTotalResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 
   async checkDomain(
     domain: string,
-    userId: string,
     integrationId: string,
+    userId: string,
   ): Promise<VirusTotalResponse> {
     const url = `${this.baseUrl}/domains/${domain}`;
-    return this.makeRequest(url, userId, integrationId);
+    return this.makeRequest<VirusTotalResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 
   async checkHash(
     hash: string,
-    userId: string,
     integrationId: string,
+    userId: string,
   ): Promise<VirusTotalResponse> {
     const url = `${this.baseUrl}/files/${hash}`;
-    return this.makeRequest(url, userId, integrationId);
+    return this.makeRequest<VirusTotalResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 
   async analyzeUrl(
-    url: string,
-    userId: string,
+    urlToAnalyze: string,
     integrationId: string,
+    userId: string,
   ): Promise<VirusTotalResponse> {
-    const apiUrl = `${this.baseUrl}/urls`;
+    const url = `${this.baseUrl}/urls`;
     const formData = new URLSearchParams();
-    formData.append('url', url);
+    formData.append('url', urlToAnalyze);
 
-    return this.makeRequest(apiUrl, userId, integrationId, {
+    return this.makeRequest<VirusTotalResponse>(url, integrationId, userId, {
       method: 'POST',
       data: formData,
       headers: {
@@ -110,10 +75,12 @@ export class VirustotalService {
 
   async getUrlAnalysisReport(
     analysisId: string,
-    userId: string,
     integrationId: string,
+    userId: string,
   ): Promise<VirusTotalResponse> {
     const url = `${this.baseUrl}/analyses/${analysisId}`;
-    return this.makeRequest(url, userId, integrationId);
+    return this.makeRequest<VirusTotalResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 }

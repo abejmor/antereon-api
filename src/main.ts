@@ -9,7 +9,7 @@ import { SecretsService } from './modules/secrets/secrets.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const secretsService = app.get(SecretsService);
-  const config = secretsService.getAllConfig();
+  const config = secretsService.getAppConfig();
 
   app.setGlobalPrefix('api');
 

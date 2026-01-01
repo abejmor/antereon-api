@@ -6,7 +6,7 @@ import { SecretsService } from '../secrets/secrets.service';
   imports: [
     TypeOrmModule.forRootAsync({
       useFactory: (secretsService: SecretsService) => {
-        const dbConfig = secretsService.getConfigSecrets('database');
+        const dbConfig = secretsService.getAppConfig().database;
         const env = secretsService.getRuntimeEnv();
 
         return {

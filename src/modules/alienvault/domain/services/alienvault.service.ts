@@ -1,65 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { IntegrationService } from '@/modules/integration/domain/integration.service';
+import { IntegrationService } from '@/modules/integration/domain/services/integration.service';
 import { AlienVaultResponse } from '@/modules/alienvault/infrastructure/alienvault.dto';
-import { StatisticsService } from '@/modules/statistics/statistics.service';
-import axios from 'axios';
+import { StatisticsService } from '@/modules/statistics/domain/services/statistics.service';
+import { BaseProviderService } from '@/modules/shared/base-provider.service';
 
 @Injectable()
-export class AlienvaultService {
-  private readonly baseUrl = 'https://otx.alienvault.com/api/v1';
+export class AlienvaultService extends BaseProviderService {
+  protected readonly baseUrl = 'https://otx.alienvault.com/api/v1';
+  protected readonly providerName = 'alienvault';
 
   constructor(
-    private readonly integrationService: IntegrationService,
-    private readonly statisticsService: StatisticsService,
-  ) {}
-
-  private async getApiKey(
-    integrationId: string,
-    userId: string,
-  ): Promise<string> {
-    try {
-      return await this.integrationService.getDecryptedApiKey(
-        integrationId,
-        userId,
-      );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`failed to get alienvault API key: ${errorMessage}`);
-    }
+    integrationService: IntegrationService,
+    statisticsService: StatisticsService,
+  ) {
+    super(integrationService, statisticsService);
   }
 
-  private async makeRequest(
-    endpoint: string,
-    integrationId: string,
-    userId: string,
-  ): Promise<AlienVaultResponse> {
-    const apiKey = await this.getApiKey(integrationId, userId);
-    const url = `${this.baseUrl}/${endpoint}`;
-
-    const config = {
-      headers: {
-        'X-OTX-API-KEY': apiKey,
-        Accept: 'application/json',
-      },
+  protected buildHeaders(apiKey: string): Record<string, string> {
+    return {
+      'X-OTX-API-KEY': apiKey,
+      Accept: 'application/json',
     };
-
-    try {
-      const response = await axios.get(url, config);
-
-      await this.statisticsService.incrementUsageCount(userId, 'alienvault');
-
-      return {
-        provider: 'alienvault',
-        status: 'success' as const,
-        apiData: response.data as Record<string, unknown>,
-        analysisTimestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`AlienVault API error: ${errorMessage}`);
-    }
   }
 
   async checkIp(
@@ -67,11 +28,10 @@ export class AlienvaultService {
     integrationId: string,
     userId: string,
   ): Promise<AlienVaultResponse> {
-    return this.makeRequest(
-      `indicators/IPv4/${ip}/general`,
-      integrationId,
-      userId,
-    );
+    const url = `${this.baseUrl}/indicators/IPv4/${ip}/general`;
+    return this.makeRequest<AlienVaultResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 
   async checkDomain(
@@ -79,11 +39,10 @@ export class AlienvaultService {
     integrationId: string,
     userId: string,
   ): Promise<AlienVaultResponse> {
-    return this.makeRequest(
-      `indicators/domain/${domain}/general`,
-      integrationId,
-      userId,
-    );
+    const url = `${this.baseUrl}/indicators/domain/${domain}/general`;
+    return this.makeRequest<AlienVaultResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 
   async checkHash(
@@ -91,23 +50,21 @@ export class AlienvaultService {
     integrationId: string,
     userId: string,
   ): Promise<AlienVaultResponse> {
-    return this.makeRequest(
-      `indicators/file/${hash}/general`,
-      integrationId,
-      userId,
-    );
+    const url = `${this.baseUrl}/indicators/file/${hash}/general`;
+    return this.makeRequest<AlienVaultResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 
   async checkUrl(
-    url: string,
+    urlToCheck: string,
     integrationId: string,
     userId: string,
   ): Promise<AlienVaultResponse> {
-    const encodedUrl = Buffer.from(url).toString('base64');
-    return this.makeRequest(
-      `indicators/url/${encodedUrl}/general`,
-      integrationId,
-      userId,
-    );
+    const encodedUrl = Buffer.from(urlToCheck).toString('base64');
+    const url = `${this.baseUrl}/indicators/url/${encodedUrl}/general`;
+    return this.makeRequest<AlienVaultResponse>(url, integrationId, userId, {
+      method: 'GET',
+    });
   }
 }

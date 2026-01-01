@@ -31,8 +31,8 @@ describe('POST /auth/register', () => {
       const expected: AuthResponseDto = {
         user: {
           id: expect.any(String),
-          name: userData.name as string,
-          email: userData.email as string,
+          name: userData.name,
+          email: userData.email,
           isActive: true,
           theme: 'antereonDark',
           createdAt: expect.any(String),

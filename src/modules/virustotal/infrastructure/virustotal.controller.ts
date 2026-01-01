@@ -31,8 +31,8 @@ export class VirustotalController {
   ): Promise<VirusTotalResponse> {
     return this.virustotalService.checkIp(
       checkIpDto.ip,
-      req.user.id,
       checkIpDto.integrationId,
+      req.user.id,
     );
   }
 
@@ -43,8 +43,8 @@ export class VirustotalController {
   ): Promise<VirusTotalResponse> {
     return this.virustotalService.checkDomain(
       checkDomainDto.domain,
-      req.user.id,
       checkDomainDto.integrationId,
+      req.user.id,
     );
   }
 
@@ -55,8 +55,8 @@ export class VirustotalController {
   ): Promise<VirusTotalResponse> {
     return this.virustotalService.checkHash(
       checkHashDto.hash,
-      req.user.id,
       checkHashDto.integrationId,
+      req.user.id,
     );
   }
 
@@ -67,8 +67,8 @@ export class VirustotalController {
   ): Promise<VirusTotalResponse> {
     return this.virustotalService.analyzeUrl(
       analyzeUrlDto.url,
-      req.user.id,
       analyzeUrlDto.integrationId,
+      req.user.id,
     );
   }
 
@@ -80,8 +80,8 @@ export class VirustotalController {
   ): Promise<VirusTotalResponse> {
     return this.virustotalService.getUrlAnalysisReport(
       analysisId,
-      req.user.id,
       integrationId,
+      req.user.id,
     );
   }
 }

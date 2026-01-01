@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
+import { Repository, FindManyOptions, ILike } from 'typeorm';
 import { IOCAnalysisResult } from '../ioc-analysis-result.entity';
 import {
   CreateIOCAnalysisResultDto,
@@ -48,26 +48,24 @@ export class IOCAnalysisService {
   }> {
     const { page = 1, limit = 20, iocType, provider, iocValue } = query;
 
-    const queryBuilder = this.iocAnalysisRepository
-      .createQueryBuilder('ioc')
-      .where('ioc.userId = :userId', { userId })
-      .orderBy('ioc.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    const where: FindManyOptions<IOCAnalysisResult>['where'] = { userId };
 
     if (iocType) {
-      queryBuilder.andWhere('ioc.iocType = :iocType', { iocType });
+      where.iocType = iocType;
     }
     if (provider) {
-      queryBuilder.andWhere('ioc.provider = :provider', { provider });
+      where.provider = provider;
     }
     if (iocValue) {
-      queryBuilder.andWhere('ioc.iocValue ILIKE :iocValue', {
-        iocValue: `%${iocValue}%`,
-      });
+      where.iocValue = ILike(`%${iocValue}%`);
     }
 
-    const [results, total] = await queryBuilder.getManyAndCount();
+    const [results, total] = await this.iocAnalysisRepository.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
     return {
       results: results.map((result) => this.toOptimizedResponseDto(result)),
@@ -81,16 +79,7 @@ export class IOCAnalysisService {
     id: string,
     userId: string,
   ): Promise<IOCAnalysisResultResponseDto> {
-    const result = await this.iocAnalysisRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!result) {
-      throw new NotFoundException(
-        `IOC analysis result with ID ${id} not found`,
-      );
-    }
-
+    const result = await this.getAnalysisResultOrFail(id, userId);
     return this.toResponseDto(result);
   }
 
@@ -112,21 +101,27 @@ export class IOCAnalysisService {
   }
 
   async delete(id: string, userId: string): Promise<void> {
-    const result = await this.iocAnalysisRepository.findOne({
-      where: { id, userId },
-    });
-
-    if (!result) {
-      throw new NotFoundException(
-        `IOC analysis result with ID ${id} not found`,
-      );
-    }
-
+    const result = await this.getAnalysisResultOrFail(id, userId);
     await this.iocAnalysisRepository.remove(result);
   }
 
   async deleteAll(userId: string): Promise<void> {
     await this.iocAnalysisRepository.delete({ userId });
+  }
+
+  private async getAnalysisResultOrFail(
+    id: string,
+    userId: string,
+  ): Promise<IOCAnalysisResult> {
+    const result = await this.iocAnalysisRepository.findOne({
+      where: { id, userId },
+    });
+    if (!result) {
+      throw new NotFoundException(
+        `IOC analysis result with ID ${id} not found`,
+      );
+    }
+    return result;
   }
 
   async getStatistics(userId: string): Promise<{
@@ -135,30 +130,47 @@ export class IOCAnalysisService {
     analysesByType: Record<string, number>;
     recentAnalyses: IOCAnalysisResultResponseDto[];
   }> {
-    const results = await this.iocAnalysisRepository.find({
+    const totalAnalyses = await this.iocAnalysisRepository.count({
+      where: { userId },
+    });
+
+    const providerStats = await this.iocAnalysisRepository
+      .createQueryBuilder('analysis')
+      .select('analysis.provider', 'provider')
+      .addSelect('COUNT(*)', 'count')
+      .where('analysis.userId = :userId', { userId })
+      .groupBy('analysis.provider')
+      .getRawMany();
+
+    const typeStats = await this.iocAnalysisRepository
+      .createQueryBuilder('analysis')
+      .select('analysis.iocType', 'iocType')
+      .addSelect('COUNT(*)', 'count')
+      .where('analysis.userId = :userId', { userId })
+      .groupBy('analysis.iocType')
+      .getRawMany();
+
+    const recentResults = await this.iocAnalysisRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
+      take: 10,
     });
-
-    const analysesByProvider: Record<string, number> = {};
-    const analysesByType: Record<string, number> = {};
-
-    results.forEach((result) => {
-      analysesByProvider[result.provider] =
-        (analysesByProvider[result.provider] || 0) + 1;
-      analysesByType[result.iocType] =
-        (analysesByType[result.iocType] || 0) + 1;
-    });
-
-    const recentAnalyses = results
-      .slice(0, 10)
-      .map((result) => this.toResponseDto(result));
 
     return {
-      totalAnalyses: results.length,
-      analysesByProvider,
-      analysesByType,
-      recentAnalyses,
+      totalAnalyses,
+      analysesByProvider: Object.fromEntries(
+        providerStats.map((s: { provider: string; count: string }) => [
+          s.provider,
+          parseInt(s.count),
+        ]),
+      ),
+      analysesByType: Object.fromEntries(
+        typeStats.map((s: { iocType: string; count: string }) => [
+          s.iocType,
+          parseInt(s.count),
+        ]),
+      ),
+      recentAnalyses: recentResults.map((r) => this.toResponseDto(r)),
     };
   }
 
