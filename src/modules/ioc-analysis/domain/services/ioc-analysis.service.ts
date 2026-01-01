@@ -5,7 +5,6 @@ import { IOCAnalysisResult } from '../ioc-analysis-result.entity';
 import {
   CreateIOCAnalysisResultDto,
   IOCAnalysisResultResponseDto,
-  IOCCardResponseDto,
   GetIOCAnalysisResultsQueryDto,
 } from '../../infrastructure/ioc-analysis.dto';
 
@@ -41,7 +40,15 @@ export class IOCAnalysisService {
     userId: string,
     query: GetIOCAnalysisResultsQueryDto,
   ): Promise<{
-    results: IOCCardResponseDto[];
+    results: {
+      id: string;
+      iocValue: string;
+      iocType: 'ip' | 'domain' | 'hash' | 'url';
+      provider: string;
+      status: 'success' | 'error' | 'pending';
+      error?: string;
+      analysisTimestamp: Date;
+    }[];
     total: number;
     page: number;
     limit: number;
@@ -68,7 +75,15 @@ export class IOCAnalysisService {
     });
 
     return {
-      results: results.map((result) => this.toOptimizedResponseDto(result)),
+      results: results.map((result) => ({
+        id: result.id,
+        iocValue: result.iocValue,
+        iocType: result.iocType,
+        provider: result.provider,
+        status: result.status,
+        error: result.error,
+        analysisTimestamp: result.analysisTimestamp,
+      })),
       total,
       page,
       limit,
@@ -83,23 +98,7 @@ export class IOCAnalysisService {
     return this.toResponseDto(result);
   }
 
-  async findByIOCAndProvider(
-    userId: string,
-    iocValue: string,
-    provider: string,
-  ): Promise<IOCAnalysisResultResponseDto[]> {
-    const results = await this.iocAnalysisRepository.find({
-      where: {
-        userId,
-        iocValue,
-        provider,
-      },
-      order: { createdAt: 'DESC' },
-    });
-
-    return results.map((result) => this.toResponseDto(result));
-  }
-
+  
   async delete(id: string, userId: string): Promise<void> {
     const result = await this.getAnalysisResultOrFail(id, userId);
     await this.iocAnalysisRepository.remove(result);
@@ -124,70 +123,8 @@ export class IOCAnalysisService {
     return result;
   }
 
-  async getStatistics(userId: string): Promise<{
-    totalAnalyses: number;
-    analysesByProvider: Record<string, number>;
-    analysesByType: Record<string, number>;
-    recentAnalyses: IOCAnalysisResultResponseDto[];
-  }> {
-    const totalAnalyses = await this.iocAnalysisRepository.count({
-      where: { userId },
-    });
-
-    const providerStats = await this.iocAnalysisRepository
-      .createQueryBuilder('analysis')
-      .select('analysis.provider', 'provider')
-      .addSelect('COUNT(*)', 'count')
-      .where('analysis.userId = :userId', { userId })
-      .groupBy('analysis.provider')
-      .getRawMany();
-
-    const typeStats = await this.iocAnalysisRepository
-      .createQueryBuilder('analysis')
-      .select('analysis.iocType', 'iocType')
-      .addSelect('COUNT(*)', 'count')
-      .where('analysis.userId = :userId', { userId })
-      .groupBy('analysis.iocType')
-      .getRawMany();
-
-    const recentResults = await this.iocAnalysisRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-      take: 10,
-    });
-
-    return {
-      totalAnalyses,
-      analysesByProvider: Object.fromEntries(
-        providerStats.map((s: { provider: string; count: string }) => [
-          s.provider,
-          parseInt(s.count),
-        ]),
-      ),
-      analysesByType: Object.fromEntries(
-        typeStats.map((s: { iocType: string; count: string }) => [
-          s.iocType,
-          parseInt(s.count),
-        ]),
-      ),
-      recentAnalyses: recentResults.map((r) => this.toResponseDto(r)),
-    };
-  }
-
-  private toOptimizedResponseDto(
-    result: IOCAnalysisResult,
-  ): IOCCardResponseDto {
-    return {
-      id: result.id,
-      iocValue: result.iocValue,
-      iocType: result.iocType,
-      provider: result.provider,
-      status: result.status,
-      error: result.error,
-      analysisTimestamp: result.analysisTimestamp,
-    };
-  }
-
+  
+  
   private toResponseDto(
     result: IOCAnalysisResult,
   ): IOCAnalysisResultResponseDto {
