@@ -21,7 +21,6 @@ import { IOCAnalysisService } from '../domain/services/ioc-analysis.service';
 import {
   CreateIOCAnalysisResultDto,
   IOCAnalysisResultResponseDto,
-  IOCCardResponseDto,
   GetIOCAnalysisResultsQueryDto,
 } from './ioc-analysis.dto';
 
@@ -51,13 +50,20 @@ export class IOCAnalysisController {
   @ApiResponse({
     status: 200,
     description: 'IOC analysis results retrieved successfully',
-    type: [IOCCardResponseDto],
   })
   async findAll(
     @Query() query: GetIOCAnalysisResultsQueryDto,
     @Req() req: { user: { id: string } },
   ): Promise<{
-    results: IOCCardResponseDto[];
+    results: {
+      id: string;
+      iocValue: string;
+      iocType: 'ip' | 'domain' | 'hash' | 'url';
+      provider: string;
+      status: 'success' | 'error' | 'pending';
+      error?: string;
+      analysisTimestamp: Date;
+    }[];
     total: number;
     page: number;
     limit: number;
@@ -65,39 +71,8 @@ export class IOCAnalysisController {
     return this.iocAnalysisService.findAll(req.user.id, query);
   }
 
-  @Get('statistics')
-  @ApiOperation({ summary: 'Get IOC analysis statistics for current user' })
-  @ApiResponse({
-    status: 200,
-    description: 'IOC analysis statistics retrieved successfully',
-  })
-  async getStatistics(@Req() req: { user: { id: string } }) {
-    return this.iocAnalysisService.getStatistics(req.user.id);
-  }
-
-  @Get('search')
-  @ApiOperation({
-    summary: 'Search IOC analysis results by IOC value and provider',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'IOC analysis results found',
-    type: [IOCAnalysisResultResponseDto],
-  })
-  @ApiQuery({ name: 'iocValue', required: true, type: String })
-  @ApiQuery({ name: 'provider', required: true, type: String })
-  async findByIOCAndProvider(
-    @Query('iocValue') iocValue: string,
-    @Query('provider') provider: string,
-    @Req() req: { user: { id: string } },
-  ): Promise<IOCAnalysisResultResponseDto[]> {
-    return this.iocAnalysisService.findByIOCAndProvider(
-      req.user.id,
-      iocValue,
-      provider,
-    );
-  }
-
+  
+  
   @Get(':id')
   @ApiOperation({ summary: 'Get IOC analysis result by ID' })
   @ApiResponse({

@@ -69,31 +69,6 @@ export class IOCAnalysisResultResponseDto {
   userId: string;
 }
 
-export class IOCCardResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  iocValue: string;
-
-  @ApiProperty()
-  iocType: 'ip' | 'domain' | 'hash' | 'url';
-
-  @ApiProperty()
-  provider: string;
-
-  @ApiProperty({
-    description: 'Analysis status',
-    enum: ['success', 'error', 'pending'],
-  })
-  status: 'success' | 'error' | 'pending';
-
-  @ApiPropertyOptional()
-  error?: string;
-
-  @ApiProperty()
-  analysisTimestamp: Date;
-}
 
 export class GetIOCAnalysisResultsQueryDto {
   @ApiPropertyOptional({ description: 'Filter by IOC type' })
