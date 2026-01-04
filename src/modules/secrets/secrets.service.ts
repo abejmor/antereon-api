@@ -27,7 +27,7 @@ export class SecretsService {
   private getDatabaseConfig() {
     return {
       host: this.configService.get<string>('DB_HOST', 'localhost'),
-      port: this.configService.get<number>('DB_PORT', 5432),
+      port: this.configService.get<number>('DB_PORT', 5433),
       username: this.configService.get<string>('DB_USERNAME', 'postgres'),
       password: this.configService.get<string>(
         'DB_PASSWORD',
