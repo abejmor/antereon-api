@@ -36,7 +36,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv environment variable files
-# .env must be avoided in the future, implemented in CI/CD with secrets in the cloud
+.env
 .env.development.local
 .env.test.local
 .env.production.local
