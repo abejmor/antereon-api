@@ -20,6 +20,10 @@ describe('POST /integrations', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should create integration successfully', async () => {
       const password = 'testPassword123';

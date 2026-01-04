@@ -23,6 +23,10 @@ describe('GET /integrations', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should return all user integrations', async () => {
       const password = 'testPassword123';

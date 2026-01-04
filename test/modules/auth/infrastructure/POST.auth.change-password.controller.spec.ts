@@ -16,6 +16,10 @@ describe('PUT /auth/profile/password', () => {
     }
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should exist and respond', async () => {
       const response = await request(app.getHttpServer())

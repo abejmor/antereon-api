@@ -24,6 +24,10 @@ describe('POST /virustotal/check-ip', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should check IP successfully with valid integration', async () => {
       const password = 'testPassword123';

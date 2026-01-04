@@ -20,6 +20,10 @@ describe('PUT /auth/profile', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should update user profile successfully', async () => {
       const password = 'testPassword123';

@@ -23,6 +23,10 @@ describe('GET /integrations/active', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should return only active integrations', async () => {
       const password = 'testPassword123';

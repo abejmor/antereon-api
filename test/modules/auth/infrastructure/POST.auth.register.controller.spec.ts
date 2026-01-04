@@ -15,6 +15,10 @@ describe('POST /auth/register', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should register a new user successfully', async () => {
       const userData = {
