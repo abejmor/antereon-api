@@ -29,7 +29,7 @@ Cybersecurity intelligence platform for analysts, that centralizes and automates
 
 ### Setup
 
-1. **Ensure Port 5432 is Free**
+1. **Ensure Port 5433 is Free**
 
    - Stop any local PostgreSQL service to avoid conflicts with Docker.
 
