@@ -29,23 +29,29 @@ Cybersecurity intelligence platform for analysts, that centralizes and automates
 
 ### Setup
 
-1. **Ensure Port 5433 is Free**
+1. **Configure Environment Variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Ensure Port 5433 is Free**
 
    - Stop any local PostgreSQL service to avoid conflicts with Docker.
 
-2. **Start Infrastructure**
+3. **Start Infrastructure**
 
    ```bash
    docker-compose up -d
    ```
 
-3. **Install Dependencies**
+4. **Install Dependencies**
 
    ```bash
    yarn install --frozen-lockfile
    ```
 
-4. **Run Development Server**
+5. **Run Development Server**
    ```bash
    yarn start:dev
    ```
