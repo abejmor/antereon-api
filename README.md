@@ -4,19 +4,19 @@ Cybersecurity intelligence platform for analysts, that centralizes and automates
 
 ## Features
 
-- **BYOA Model**: Bring Your Own API Key - secure AES-256-CBC encrypted storage
+- **BYOA Model**: Bring Your Own API Key - secure AES-256-GCM encrypted storage
 - **Multi-Provider**: VirusTotal, AbuseIPDB, AlienVault OTX
 - **Parallel Queries**: Simultaneous API calls for faster results
 - **JWT Authentication**: Secure access and refresh tokens
 - **IOC Analysis**: IPs, domains, hashes, and URLs
-- **Enterprise Security**: AES-256-CBC encryption for API key protection
+- **Enterprise Security**: AES-256-GCM encryption for API key protection
 
 ## Tech Stack
 
 - NestJS (Node.js + TypeScript)
 - PostgreSQL + TypeORM
 - JWT Authentication
-- AES-256-CBC Encryption with CryptoJS
+- AES-256-GCM Encryption (Node.js Crypto)
 - Secure API key storage and management
 
 ## Quick Start
