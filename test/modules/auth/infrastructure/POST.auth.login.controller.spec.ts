@@ -20,6 +20,10 @@ describe('POST /auth/login', () => {
     }
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should login successfully with valid credentials', async () => {
       const password = 'password123';

@@ -24,6 +24,10 @@ describe('POST /abuseipdb/report', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('yellow brick road', () => {
     it('should report IP successfully with valid integration', async () => {
       const password = 'testPassword123';
