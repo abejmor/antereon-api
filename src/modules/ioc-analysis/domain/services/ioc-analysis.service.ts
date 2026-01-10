@@ -98,7 +98,6 @@ export class IOCAnalysisService {
     return this.toResponseDto(result);
   }
 
-  
   async delete(id: string, userId: string): Promise<void> {
     const result = await this.getAnalysisResultOrFail(id, userId);
     await this.iocAnalysisRepository.remove(result);
@@ -123,8 +122,6 @@ export class IOCAnalysisService {
     return result;
   }
 
-  
-  
   private toResponseDto(
     result: IOCAnalysisResult,
   ): IOCAnalysisResultResponseDto {

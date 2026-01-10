@@ -69,7 +69,6 @@ export class IOCAnalysisResultResponseDto {
   userId: string;
 }
 
-
 export class GetIOCAnalysisResultsQueryDto {
   @ApiPropertyOptional({ description: 'Filter by IOC type' })
   @IsOptional()

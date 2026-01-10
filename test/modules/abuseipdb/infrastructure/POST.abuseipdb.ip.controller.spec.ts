@@ -47,7 +47,7 @@ describe('POST /abuseipdb/ip', () => {
         provider: 'abuseipdb',
         name: 'My AbuseIPDB',
         apiKey: 'test-api-key-abuseipdb',
-        isDefault: true,
+        isFavorite: true,
       };
 
       const integration = await integrationService.create(

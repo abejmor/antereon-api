@@ -47,7 +47,7 @@ describe('POST /virustotal/check-ip', () => {
         provider: 'virustotal',
         name: 'My VirusTotal',
         apiKey: 'test-api-key-virustotal',
-        isDefault: true,
+        isFavorite: true,
       };
 
       const integration = await integrationService.create(

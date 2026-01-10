@@ -48,14 +48,14 @@ describe('GET /integrations/active', () => {
         provider: 'virustotal',
         name: 'Active VirusTotal API',
         apiKey: 'test-key-active',
-        isDefault: true,
+        isFavorite: true,
       });
 
       const inactiveIntegration = await integrationService.create(user.id, {
         provider: 'abuseipdb',
         name: 'Inactive AbuseIPDB API',
         apiKey: 'test-key-inactive',
-        isDefault: false,
+        isFavorite: false,
       });
 
       await integrationService.toggleActive(inactiveIntegration.id, user.id);
@@ -73,7 +73,7 @@ describe('GET /integrations/active', () => {
         provider: 'virustotal',
         name: 'Active VirusTotal API',
         isActive: true,
-        isDefault: true,
+        isFavorite: true,
       });
 
       expect((response.body as any[])[0]).toHaveProperty(
@@ -104,7 +104,7 @@ describe('GET /integrations/active', () => {
         provider: 'virustotal',
         name: 'Inactive Integration',
         apiKey: 'test-key',
-        isDefault: false,
+        isFavorite: false,
       });
 
       await integrationService.toggleActive(integration.id, user.id);

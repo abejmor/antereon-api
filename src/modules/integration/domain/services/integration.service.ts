@@ -23,10 +23,10 @@ export class IntegrationService {
     userId: string,
     createIntegrationDto: CreateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
-    const { provider, apiKey, isDefault } = createIntegrationDto;
+    const { provider, apiKey, isFavorite } = createIntegrationDto;
 
-    if (isDefault) {
-      await this.unsetOtherDefaults(userId, provider);
+    if (isFavorite) {
+      await this.unsetOtherFavorites(userId, provider);
     }
 
     const encryptedApiKey = this.encryptionService.encrypt(apiKey);
@@ -35,7 +35,7 @@ export class IntegrationService {
       ...createIntegrationDto,
       userId,
       encryptedApiKey,
-      isDefault: !!isDefault,
+      isFavorite: !!isFavorite,
     });
 
     const savedIntegration =
@@ -96,8 +96,8 @@ export class IntegrationService {
   ): Promise<IntegrationResponseDto> {
     const integration = await this.getIntegrationOrFail(id, userId);
 
-    if (dto.isDefault) {
-      await this.unsetOtherDefaults(userId, integration.provider, id);
+    if (dto.isFavorite) {
+      await this.unsetOtherFavorites(userId, integration.provider, id);
     }
 
     if (dto.apiKey) {
@@ -124,14 +124,14 @@ export class IntegrationService {
     return this.toResponseDto(updated);
   }
 
-  private async unsetOtherDefaults(
+  private async unsetOtherFavorites(
     userId: string,
     provider: string,
     excludeId?: string,
   ) {
     await this.integrationRepository.update(
       { userId, provider, ...(excludeId && { id: Not(excludeId) }) },
-      { isDefault: false },
+      { isFavorite: false },
     );
   }
 
@@ -194,7 +194,7 @@ export class IntegrationService {
       provider: integration.provider,
       name: integration.name,
       isActive: integration.isActive,
-      isDefault: integration.isDefault,
+      isFavorite: integration.isFavorite,
       createdAt: integration.createdAt,
       updatedAt: integration.updatedAt,
     });

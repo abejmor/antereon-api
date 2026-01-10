@@ -45,9 +45,9 @@ describe('POST /abuseipdb/report', () => {
 
       const createIntegrationDto: CreateIntegrationDto = {
         provider: 'abuseipdb',
-        name: 'My AbuseIPDB Report',
+        name: 'My AbuseIPDB',
         apiKey: 'test-api-key-abuseipdb',
-        isDefault: true,
+        isFavorite: true,
       };
 
       const integration = await integrationService.create(

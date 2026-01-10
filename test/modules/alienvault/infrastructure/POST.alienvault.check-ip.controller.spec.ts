@@ -47,7 +47,7 @@ describe('POST /alienvault/check-ip', () => {
         provider: 'alienvault',
         name: 'My AlienVault',
         apiKey: 'test-api-key-alienvault',
-        isDefault: true,
+        isFavorite: true,
       };
 
       const integration = await integrationService.create(

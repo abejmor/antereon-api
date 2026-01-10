@@ -29,12 +29,12 @@ export class CreateIntegrationDto {
   apiKey: string;
 
   @ApiPropertyOptional({
-    description: 'set as default integration for this provider',
+    description: 'set as favorite integration for this provider',
     default: false,
   })
   @IsOptional()
   @IsBoolean()
-  isDefault?: boolean;
+  isFavorite?: boolean;
 
   @ApiPropertyOptional({ description: 'additional provider configuration' })
   @IsOptional()
@@ -60,12 +60,12 @@ export class UpdateIntegrationDto {
   isActive?: boolean;
 
   @ApiPropertyOptional({
-    description: 'set as default integration for this provider',
+    description: 'set as favorite integration for this provider',
     default: false,
   })
   @IsOptional()
   @IsBoolean()
-  isDefault?: boolean;
+  isFavorite?: boolean;
 
   @ApiPropertyOptional({ description: 'additional provider configuration' })
   @IsOptional()
@@ -124,7 +124,7 @@ export class IntegrationResponseDto {
   isActive: boolean;
 
   @ApiProperty()
-  isDefault: boolean;
+  isFavorite: boolean;
 
   @ApiProperty()
   createdAt: Date;

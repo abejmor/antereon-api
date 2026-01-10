@@ -45,7 +45,7 @@ describe('POST /integrations', () => {
         provider: 'virustotal',
         name: 'My VirusTotal API',
         apiKey: 'test-api-key-virustotal-123',
-        isDefault: true,
+        isFavorite: true,
         configuration: {
           maxRequests: 1000,
           timeout: 30,
@@ -63,7 +63,7 @@ describe('POST /integrations', () => {
         provider: 'virustotal',
         name: 'My VirusTotal API',
         isActive: true,
-        isDefault: true,
+        isFavorite: true,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
@@ -105,7 +105,7 @@ describe('POST /integrations', () => {
         provider: 'abuseipdb',
         name: 'AbuseIPDB Integration',
         isActive: true,
-        isDefault: false,
+        isFavorite: false,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });

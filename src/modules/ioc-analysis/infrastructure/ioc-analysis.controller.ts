@@ -71,8 +71,6 @@ export class IOCAnalysisController {
     return this.iocAnalysisService.findAll(req.user.id, query);
   }
 
-  
-  
   @Get(':id')
   @ApiOperation({ summary: 'Get IOC analysis result by ID' })
   @ApiResponse({

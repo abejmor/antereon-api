@@ -27,7 +27,7 @@ export class Integration {
   isActive: boolean;
 
   @Column({ type: 'boolean', default: false })
-  isDefault: boolean;
+  isFavorite: boolean;
 
   @Column({ type: 'json', nullable: true })
   configuration: Record<string, any>;
