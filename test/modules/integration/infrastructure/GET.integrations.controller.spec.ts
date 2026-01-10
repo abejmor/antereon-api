@@ -48,14 +48,14 @@ describe('GET /integrations', () => {
         provider: 'virustotal',
         name: 'VirusTotal API',
         apiKey: 'test-key-1',
-        isDefault: true,
+        isFavorite: true,
       });
 
       await integrationService.create(user.id, {
         provider: 'abuseipdb',
         name: 'AbuseIPDB API',
         apiKey: 'test-key-2',
-        isDefault: false,
+        isFavorite: false,
       });
 
       const response = await request(app.getHttpServer())
@@ -71,7 +71,7 @@ describe('GET /integrations', () => {
         provider: expect.any(String),
         name: expect.any(String),
         isActive: expect.any(Boolean),
-        isDefault: expect.any(Boolean),
+        isFavorite: expect.any(Boolean),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
