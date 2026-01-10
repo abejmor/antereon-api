@@ -17,7 +17,7 @@ import { SecretsService } from '../secrets/secrets.service';
           password: dbConfig.password,
           database: dbConfig.name,
           entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-          synchronize: env !== 'production',
+          synchronize: true,
           logging: env === 'development',
           ssl: env === 'production' ? { rejectUnauthorized: false } : false,
           autoLoadEntities: true,

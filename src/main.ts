@@ -7,7 +7,8 @@ import rateLimit from 'express-rate-limit';
 import { SecretsService } from './modules/secrets/secrets.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', 1);
   const secretsService = app.get(SecretsService);
   const config = secretsService.getAppConfig();
 
